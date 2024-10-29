@@ -87,7 +87,7 @@ temperature = devCtrl.getTemperature();
 }
 
 
-bool move(char field1[], char field2[]){
+bool move(char field1[], char field2[], bool isPlayerMove){
     Serial.println("Please wait for the supercomputer to compute the supreme computations...");
     
     int y1= field1[0] -'A';
@@ -102,7 +102,9 @@ bool move(char field1[], char field2[]){
       return false;
     }
     
-    if(field[x1][y1][1]!=white){
+    char currentColor = isPlayerMove ? white : black;
+    
+    if(field[x1][y1][1]!=currentColor){
         Serial.println("No figure of you to move there");
         return false;
       }
@@ -115,7 +117,7 @@ bool move(char field1[], char field2[]){
     
     //Status hier: Es befindet sich eine weisse Figur auf dem 1. Feld, 2. Feld ist auf dem Spielfeld. 
     //Jetzt Zug auf Validität überprüfen. Vereinfachung, man kann ins Schach ziehen, der Gegner kann dann den König schlagen, erst dann ist das Spiel vorbei
-   if(ismovevalid(x1,y1,x2,y2,white)){
+   if(ismovevalid(x1,y1,x2,y2,currentColor)){
         field[x2][y2][0] = field[x1][y1][0];//Schlagen ist damit gleich schon integriert :)
         field[x2][y2][1] = field[x1][y1][1];
         field[x1][y1][0] = nothing;
@@ -192,6 +194,27 @@ bool ismovevalid(int x1, int y1, int x2, int y2, char color){
    return false;
 }
 
+void computerMove() {
+  // Heuristic-based approach to determine the best move for the computer
+  // For simplicity, this example will just move the first available piece
+  for (int x1 = 0; x1 < 8; x1++) {
+    for (int y1 = 0; y1 < 8; y1++) {
+      if (field[x1][y1][1] == black) {
+        for (int x2 = 0; x2 < 8; x2++) {
+          for (int y2 = 0; y2 < 8; y2++) {
+            if (ismovevalid(x1, y1, x2, y2, black)) {
+              char field1[3] = {(char)(y1 + 'A'), (char)(8 - x1 + '0'), '\0'};
+              char field2[3] = {(char)(y2 + 'A'), (char)(8 - x2 + '0'), '\0'};
+              move(field1, field2, false);
+              return;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 void loop( )
 {
  
@@ -211,11 +234,12 @@ void loop( )
   
   field2[0] = inputString[3];
   field2[1] = inputString[4];
-  if (move(field1, field2)==false)
+  if (move(field1, field2, true)==false)
   {
     Serial.println("Illegal move, try again!");
   }
   else{
+    computerMove();
     Serial.println("It's your turn :)");
   }
   printfield();
